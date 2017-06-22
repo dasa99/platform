@@ -54,16 +54,8 @@ import {getTeamMembersByIds, getMyTeamMembers} from 'mattermost-redux/actions/te
 import {getChannelAndMyMember} from 'mattermost-redux/actions/channels';
 import {Preferences as PreferencesRedux} from 'mattermost-redux/constants';
 
-export function loadMe(callback) {
-    loadMeRedux()(dispatch, getState).then(
-        () => {
-            loadCurrentLocale();
-
-            if (callback) {
-                callback();
-            }
-        }
-    );
+export function loadMe() {
+    return loadMeRedux()(dispatch, getState).then(loadCurrentLocale);
 }
 
 export function loadMeAndConfig(callback) {
@@ -86,16 +78,14 @@ export function loadMeAndConfig(callback) {
             });
         }
 
-        loadMe();
-        getLicenseConfig()(store.dispatch, store.getState).then(
-            (license) => { // eslint-disable-line max-nested-callbacks
-                global.window.mm_license = license;
-
-                if (callback) {
-                    callback();
+        Promise.all([
+            loadMe(),
+            getLicenseConfig()(store.dispatch, store.getState).then(
+                (license) => {
+                    global.window.mm_license = license;
                 }
-            }
-        );
+            )
+        ]).then(callback);
     });
 }
 
